@@ -1,5 +1,7 @@
 # Chisel Peak
 
+**[▶ Play in browser](https://saturaspace.com/play/icedig/)**
+
 A giant ember salamander is frozen inside a mountain of ice. Chip it out, one block at a time.
 
 ![Gameplay](media/gameplay.gif)
