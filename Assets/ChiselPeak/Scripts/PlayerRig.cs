@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Rendering.Universal;
+using GameTouch;
 
 namespace ChiselPeak
 {
@@ -16,6 +17,7 @@ namespace ChiselPeak
         public ToolDef Tool { get; private set; }
         public System.Action<RaycastHit, ToolDef> OnSwingHit;
         public bool Locked; // no input (win screen)
+        public TouchPad.Button SwingButton; // on-screen swing for phones
 
         // bot input
         public bool BotDriven;
@@ -81,7 +83,8 @@ namespace ChiselPeak
             bool swing = false;
             if (!Locked && !BotDriven)
             {
-                var kb = Keyboard.current; var ms = Mouse.current;
+                var kb = Keyboard.current;
+                var ms = TouchPad.RecentTouch ? null : Mouse.current; // ignore mouse events a browser emulates from taps
                 if (ms != null)
                 {
                     var d = ms.delta.ReadValue();
@@ -108,6 +111,22 @@ namespace ChiselPeak
                     Yaw += r.x * 120f * dt; Pitch -= r.y * 90f * dt;
                     moveWorld += Quaternion.Euler(0, Yaw, 0) * new Vector3(l.x, 0, l.y);
                     swing |= gp.rightTrigger.isPressed || gp.buttonSouth.isPressed;
+                }
+                // phones: stick on the left to walk, drag elsewhere to look, hold SWING
+                var tp = TouchPad.I;
+                if (tp != null)
+                {
+                    if (tp.Dragging)
+                    {
+                        var d = tp.DragDelta / Mathf.Max(1f, Screen.width) * 110f;
+                        Yaw += d.x; Pitch -= d.y;
+                    }
+                    if (tp.StickHeld)
+                    {
+                        moveWorld += Quaternion.Euler(0, Yaw, 0) * new Vector3(tp.Stick.x, 0, tp.Stick.y);
+                        if (moveWorld.sqrMagnitude > 1) moveWorld.Normalize();
+                    }
+                    if (SwingButton != null) swing |= SwingButton.held || SwingButton.pressed;
                 }
             }
             else if (BotDriven && !Locked)

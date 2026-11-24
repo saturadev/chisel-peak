@@ -129,6 +129,10 @@ namespace ChiselPeak
             if (on) prompt.text = s;
         }
 
+        public RectTransform PromptRect => promptRt;
+        public bool WinShown => winRt.gameObject.activeSelf;
+        public void SetWinHint(string s) => winHint.text = s;
+
         public void Banner(string s)
         {
             banner.text = s; banner.gameObject.SetActive(true); bannerT = 0f;

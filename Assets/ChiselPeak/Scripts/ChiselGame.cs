@@ -2,6 +2,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
+using GameTouch;
 
 namespace ChiselPeak
 {
@@ -71,7 +72,16 @@ namespace ChiselPeak
 
             Bot = Player.gameObject.AddComponent<ChiselBot>();
             Bot.Active = StartWithBot;
+
+            // phones: stick on the left to walk, drag to look, hold SWING, tap the craft prompt, tap to dig again
+            Touch = TouchPad.Create(Font, FontOutline);
+            Touch.AddStick(new Rect(0, 0, 0.5f, 0.6f), new Vector2(0, 0), new Vector2(250, 520), 150);
+            Player.SwingButton = Touch.AddButton("SWING", new Vector2(1, 0), new Vector2(-200, 360), 135, new Color(1f, 0.55f, 0.16f), 46);
+            craftArea = Touch.AddArea(Hud.PromptRect);
         }
+
+        public TouchPad Touch { get; private set; }
+        TouchPad.Button craftArea;
 
         void OnSwingHit(RaycastHit hit, ToolDef tool)
         {
@@ -111,17 +121,24 @@ namespace ChiselPeak
             var gp = Gamepad.current;
             if (gp != null && gp.buttonNorth.wasPressedThisFrame) Craft();
 
+            bool touch = TouchPad.Active;
+            Touch.hidden = Bot.Active;
+            Player.SwingButton.visible = !Won;
+            if (craftArea.pressed) Craft();
+            if (touch && Won && winAt < 0 && Hud.WinShown && Touch.Tapped) { Restart(); return; }
+
             if (!Won)
             {
                 RunTime += Time.deltaTime;
                 Hud.SetFreed(Freed);
-                Hud.SetPrompt(CanCraft ? "E  CRAFT " + NextTool.Name.ToUpperInvariant() : null);
+                Hud.SetPrompt(CanCraft ? (touch ? "TAP  CRAFT " : "E  CRAFT ") + NextTool.Name.ToUpperInvariant() : null);
                 if (Block.Removed >= Block.Total * WinFraction) Win();
             }
             else if (winAt >= 0 && Time.time >= winAt)
             {
                 winAt = -1;
                 Hud.ShowWin(RunTime, Player.Swings);
+                if (TouchPad.Active) Hud.SetWinHint("TAP  DIG AGAIN");
             }
         }
 
